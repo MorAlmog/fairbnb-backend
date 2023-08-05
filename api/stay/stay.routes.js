@@ -15,6 +15,8 @@ router.put('/:id', requireAuth, updateStay)
 router.delete('/:id', requireAuth, removeStay)
 // router.delete('/:id', requireAuth, requireAdmin, removeStay)
 
+// TODO - review  part of stay route?
+// router.post('/review/:stayId',addReview)
 // router.post('/:id/msg', requireAuth, addStayMsg)
 // router.delete('/:id/msg/:msgId', requireAuth, removeStayMsg)
 

@@ -1,74 +1,112 @@
-import {logger} from '../../services/logger.service.js'
-import {socketService} from '../../services/socket.service.js'
-import {userService} from '../user/user.service.js'
-import {authService} from '../auth/auth.service.js'
 import {orderService} from './order.service.js'
+import {logger} from '../../services/logger.service.js'
 
 export async function getOrders(req, res) {
-    try {
-        console.log('getOrders in oreder.controller req.query:', req.query);
-        // const orders = await orderService.query()
-        const orders = await orderService.query(req.query)
-        res.send(orders)
-    } catch (err) {
-        logger.error('Cannot get orders', err)
-        res.status(400).send({ err: 'Failed to get orders' })
+  try {
+    logger.debug('Getting Orders:', req.query)
+    const filterBy = {
+      txt: req.query.txt || '',
+      pageIdx: req.query.pageIdx
     }
+    // const orders = await orderService.query(filterBy)
+    const orders = await orderService.query()
+    res.json(orders)
+  } catch (err) {
+    logger.error('Failed to get orders', err)
+    res.status(400).send({ err: 'Failed to get orders' })
+  }
 }
 
-export async function deleteOrder(req, res) {
-    try {
-        const deletedCount = await orderService.remove(req.params.id)
-        if (deletedCount === 1) {
-            res.send({ msg: 'Deleted successfully' })
-        } else {
-            res.status(400).send({ err: 'Cannot remove order' })
-        }
-    } catch (err) {
-        logger.error('Failed to delete order', err)
-        res.status(400).send({ err: 'Failed to delete order' })
-    }
+export async function getOrderById(req, res) {
+  try {
+    const orderId = req.params.id
+    const order = await orderService.getById(orderId)
+    res.json(order)
+  } catch (err) {
+    logger.error('Failed to get order', err)
+    res.status(400).send({ err: 'Failed to get order' })
+  }
 }
-
 
 export async function addOrder(req, res) {
-    
-    var {loggedinUser} = req
- 
-    try {
-        var order = req.body
-        order.byUserId = loggedinUser._id
-        order = await orderService.add(order)
-        
-        // prepare the updated order for sending out
-        order.aboutUser = await userService.getById(order.aboutUserId)
-        
-        // Give the user credit for adding a order
-        // var user = await userService.getById(order.byUserId)
-        // user.score += 10
-        loggedinUser.score += 10
+  const {loggedinUser} = req
 
-        loggedinUser = await userService.update(loggedinUser)
-        order.byUser = loggedinUser
-
-        // User info is saved also in the login-token, update it
-        const loginToken = authService.getLoginToken(loggedinUser)
-        res.cookie('loginToken', loginToken)
-
-        delete order.aboutUserId
-        delete order.byUserId
-
-        socketService.broadcast({type: 'order-added', data: order, userId: loggedinUser._id})
-        socketService.emitToUser({type: 'order-about-you', data: order, userId: order.aboutUser._id})
-        
-        const fullUser = await userService.getById(loggedinUser._id)
-        socketService.emitTo({type: 'user-updated', data: fullUser, label: fullUser._id})
-
-        res.send(order)
-
-    } catch (err) {
-        logger.error('Failed to add order', err)
-        res.status(400).send({ err: 'Failed to add order' })
-    }
+  try {
+    const order = req.body
+    order.owner = loggedinUser
+    const addedOrder = await orderService.add(order)
+    res.json(addedOrder)
+  } catch (err) {
+    logger.error('Failed to add order', err)
+    res.status(400).send({ err: 'Failed to add order' })
+  }
 }
 
+
+export async function updateOrder(req, res) {
+  try {
+    const order = req.body
+    const updatedOrder = await orderService.update(order)
+    res.json(updatedOrder)
+  } catch (err) {
+    logger.error('Failed to update order', err)
+    res.status(400).send({ err: 'Failed to update order' })
+
+  }
+}
+
+export async function removeOrder(req, res) {
+  try {
+    const orderId = req.params.id
+    const removedId = await orderService.remove(orderId)
+    res.send(removedId)
+  } catch (err) {
+    logger.error('Failed to remove order', err)
+    res.status(400).send({ err: 'Failed to remove order' })
+  }
+}
+
+export async function addOrderMsg(req, res) {
+  const {loggedinUser} = req
+  try {
+    const orderId = req.params.id
+    const msg = {
+      txt: req.body.txt,
+      by: loggedinUser
+    }
+    const savedMsg = await orderService.addOrderMsg(orderId, msg)
+    res.json(savedMsg)
+  } catch (err) {
+    logger.error('Failed to update order', err)
+    res.status(400).send({ err: 'Failed to update order' })
+
+  }
+}
+
+export async function removeOrderMsg(req, res) {
+  const {loggedinUser} = req
+  try {
+    const orderId = req.params.id
+    const {msgId} = req.params
+
+    const removedId = await orderService.removeOrderMsg(orderId, msgId)
+    res.send(removedId)
+  } catch (err) {
+    logger.error('Failed to remove order msg', err)
+    res.status(400).send({ err: 'Failed to remove order msg' })
+
+  }
+}
+
+// // TODO - add review to order route?
+// export async function addReview(req,res){
+//   try {
+//     const order= await orderService.getById(req.params.orderId)
+//     order.reviews.unshift(req.body)
+//     const updatedOrder = await orderService.update(order)
+//     res.json(updatedOrder)
+//   } catch (err) {
+//     logger.error('Failed to add review', err)
+//     res.status(500).send({ err: 'Failed to add reveiw' })
+//   }
+// }
