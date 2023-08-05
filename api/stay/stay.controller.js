@@ -46,6 +46,7 @@ export async function addStay(req, res) {
 export async function updateStay(req, res) {
   try {
     const stay = req.body
+    console.log('updateStay req.body:', req.body);
     const updatedStay = await stayService.update(stay)
     res.json(updatedStay)
   } catch (err) {
