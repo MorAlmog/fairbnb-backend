@@ -7,7 +7,7 @@ const { ObjectId } = mongodb
 const PAGE_SIZE = 3
 
 
-async function query(filterBy = { txt: '' }) {
+async function query(filterBy = { txt: '', price: 0, destination: '', guests: 0 }) {
     try {
         const criteria = {
             // vendor: { $regex: filterBy.txt, $options: 'i' }
@@ -25,6 +25,14 @@ async function query(filterBy = { txt: '' }) {
         logger.error('cannot find stays', err)
         throw err
     }
+}
+
+function _buildCriteria(filterBy) {
+    const { price, destination, guests, hostId } = filterBy
+
+    const byHostId = { $regex: hostId }
+    return byHostId
+    // const byGuests = { capacity: { $gt: guests } }
 }
 
 async function getById(stayId) {

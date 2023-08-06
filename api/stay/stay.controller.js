@@ -33,7 +33,8 @@ export async function addStay(req, res) {
 
   try {
     const stay = req.body
-    stay.owner = loggedinUser
+    stay.host = loggedinUser
+    console.log('loggedinUser:', loggedinUser);
     const addedStay = await stayService.add(stay)
     res.json(addedStay)
   } catch (err) {

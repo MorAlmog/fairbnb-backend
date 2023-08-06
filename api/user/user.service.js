@@ -72,10 +72,11 @@ async function remove(userId) {
     }
 }
 
-async function update(user) {
+async function update(user, stayId = null) {
     try {
         // peek only updatable properties
-        const userToSave = {
+        console.log('update user:', user);
+        let userToSave = {
             _id: ObjectId(user._id), // needed for the returnd obj
             fullname: user.fullname,
             username: user.username,
@@ -98,7 +99,7 @@ async function add(user) {
             password: user.password,
             fullname: user.fullname,
             imgUrl: user.imgUrl,
-            score: 100
+            stays: []
         }
         const collection = await dbService.getCollection('user')
         await collection.insertOne(userToAdd)

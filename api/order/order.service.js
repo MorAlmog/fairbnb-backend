@@ -7,11 +7,10 @@ const {ObjectId} = mongodb
 const PAGE_SIZE = 3
 
 
-async function query(filterBy={txt:''}) {
+async function query(filterBy={userType: 'host'}) {
     try {
-        const criteria = {
-            // vendor: { $regex: filterBy.txt, $options: 'i' }
-        }
+        filterBy.userId = loggedinUser._id
+        const criteria = _buildCriteria(filterBy)
         const collection = await dbService.getCollection('order')
         var orderCursor = await collection.find(criteria)
 
@@ -25,6 +24,20 @@ async function query(filterBy={txt:''}) {
         logger.error('cannot find orders', err)
         throw err
     }
+}
+
+function _buildCriteria(filterBy) {
+    const byId = { $regex: filterBy.userId, $options: 'i' }
+    // const byUserType = { $regex: filterBy.userType, $options: 'i' }
+    if (filterBy.userType === 'host') {
+        const criteria = { 'host._id':byId }
+    }
+    else if (filterBy.userType === 'buyer') {
+        const criteria = { 'buyer._id':byId }
+    }
+    else throw new Error('Error: filterBy.userType is not properly defined')
+
+    return criteria
 }
 
 async function getById(orderId) {
@@ -63,7 +76,6 @@ async function add(order) {
 async function update(order) {
     try {
         const orderToSave = {
-            hostId: order.hostId,
             createdAt: order.createdAt,
             buyer: order.buyer,
             totalPrice: order.totalPrice,
@@ -72,7 +84,7 @@ async function update(order) {
             guests: order.guests,
             stay: order.stay,
             msgs: order.msgs,
-            owner: order.owner,
+            host: order.host,
             status: order.status
         }
         const collection = await dbService.getCollection('order')

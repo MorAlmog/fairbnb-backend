@@ -1,5 +1,6 @@
-import {orderService} from './order.service.js'
-import {logger} from '../../services/logger.service.js'
+import { orderService } from './order.service.js'
+import { logger } from '../../services/logger.service.js'
+import { userService } from '../user/user.service.js'
 
 export async function getOrders(req, res) {
   try {
@@ -29,14 +30,17 @@ export async function getOrderById(req, res) {
 }
 
 export async function addOrder(req, res) {
-  const {loggedinUser} = req
-
+  const { loggedinUser } = req
   try {
     const order = req.body
-    order.owner = loggedinUser
+    order.buyer = loggedinUser
+
     const addedOrder = await orderService.add(order)
+    await userService.update(loggedinUser, order._id)
     res.json(addedOrder)
-  } catch (err) {
+
+  } catch (err) { // TODO
+    // logger.error('Failed to add order to user')
     logger.error('Failed to add order', err)
     res.status(400).send({ err: 'Failed to add order' })
   }
@@ -67,7 +71,7 @@ export async function removeOrder(req, res) {
 }
 
 export async function addOrderMsg(req, res) {
-  const {loggedinUser} = req
+  const { loggedinUser } = req
   try {
     const orderId = req.params.id
     const msg = {
@@ -84,10 +88,10 @@ export async function addOrderMsg(req, res) {
 }
 
 export async function removeOrderMsg(req, res) {
-  const {loggedinUser} = req
+  const { loggedinUser } = req
   try {
     const orderId = req.params.id
-    const {msgId} = req.params
+    const { msgId } = req.params
 
     const removedId = await orderService.removeOrderMsg(orderId, msgId)
     res.send(removedId)
